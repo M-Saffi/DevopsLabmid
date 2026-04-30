@@ -1,0 +1,59 @@
+name: University Notice Board CI
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  # JOB 1: Linting (Requirement 2 & 3 in Image 2)
+  linting-stage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Modules
+        run: npm install
+      - name: HTML Check
+        run: npx htmlhint "src/*.html"
+      - name: CSS Check
+        run: npx stylelint "src/styles/*.css"
+
+  # JOB 2: Build (Requirement 4 in Image 2)
+  build-stage:
+    needs: linting-stage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Modules
+        run: npm install
+      - name: Parcel Build
+        run: npx parcel build src/*.html --public-url ./
+      - name: Save Build for Docker
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-folder
+          path: dist/
+
+  # JOB 3: Docker (Requirement 5 & 6 in Image 2)
+  docker-stage:
+    needs: build-stage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get Build Files
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-folder
+          path: dist/
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and Push to Hub
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/uni-notice-board:latest
