@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Parcel/Build outputs
+dist/
+.parcel-cache/
+
+# Docker
+docker-build-log.txt
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
